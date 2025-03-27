@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QuickShare - Peer File Transfer</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet" />
+  <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+  <style>
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    .connection-status-online {
+      animation: pulse 2s infinite;
+    }
+    .file-drop-zone {
+      transition: all 0.3s ease;
+    }
+    .file-drop-zone:hover {
+      background-color: rgba(52, 152, 219, 0.1);
+      border-color: #3498db;
+    }
+    /* Toast notification styling */
+    .toast {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1000;
+      min-width: 250px;
+      padding: 1rem;
+      background-color: #38a169;
+      color: white;
+      border-radius: 0.5rem;
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <div class="w-full max-w-2xl bg-white shadow-2xl rounded-2xl overflow-hidden">
+    <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600">
+      <h1 class="text-3xl sm:text-4xl font-bold text-white text-center flex items-center justify-center">
+        <i class="ri-share-line mr-3"></i>QuickShare
+      </h1>
+    </div>
+    <div class="p-6">
+      <!-- Connection Section -->
+      <div class="mb-6">
+        <div class="flex items-center mb-4 flex-wrap">
+          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4 mb-2 sm:mb-0">
+            <i class="ri-user-line text-blue-600 text-2xl"></i>
+          </div>
+          <div class="flex-grow">
+            <p class="font-semibold text-gray-700">Your ID: <span id="myPeerId" class="text-blue-600">Generating...</span></p>
+            <p id="connectionStatus" class="text-sm text-gray-500 flex items-center">
+              <i class="ri-signal-wifi-line mr-1"></i><span>Connecting...</span>
+            </p>
+          </div>
+          <button id="copyIdBtn" class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition mt-2 sm:mt-0">
+            <i class="ri-file-copy-line"></i>
+          </button>
+        </div>
+        <!-- Peer Connection Input -->
+        <div class="flex space-x-2 flex-wrap">
+          <div class="relative flex-grow mb-2 sm:mb-0">
+            <input 
+              type="text" 
+              id="receiverId" 
+              placeholder="Enter Peer ID to Connect" 
+              class="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+            <i class="ri-user-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          </div>
+          <button id="connectPeer" class="bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition flex items-center">
+            <i class="ri-link mr-2"></i>Connect
+          </button>
+        </div>
+      </div>
+      <!-- File Transfer Section -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Send File -->
+        <div class="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 file-drop-zone">
+          <input type="file" id="fileInput" class="hidden" />
+          <label for="fileInput" class="cursor-pointer flex flex-col items-center justify-center">
+            <i class="ri-upload-cloud-2-line text-4xl text-blue-500 mb-2"></i>
+            <p class="text-gray-600 text-center">
+              Drag & Drop or <span class="text-blue-500 underline">Browse</span>
+            </p>
+          </label>
+          <div id="selectedFileInfo" class="mt-2 text-center hidden">
+            <p id="fileName" class="text-sm text-gray-700"></p>
+            <p id="fileSize" class="text-xs text-gray-500"></p>
+          </div>
+          <button id="sendFile" class="w-full mt-4 bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition hidden">
+            <i class="ri-send-plane-line mr-2"></i>Send File
+          </button>
+        </div>
+        <!-- Receive File -->
+        <div class="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300">
+          <div class="flex flex-col items-center justify-center h-full">
+            <i class="ri-download-cloud-2-line text-4xl text-green-500 mb-2"></i>
+            <p class="text-gray-600 text-center mb-4">Waiting for incoming file...</p>
+            <div id="downloadArea" class="hidden">
+              <a 
+                id="downloadLink" 
+                href="#" 
+                download 
+                class="bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition flex items-center"
+              >
+                <i class="ri-download-line mr-2"></i>Download File
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- How to Use Instructions -->
+      <div class="mt-8 p-4 bg-gray-50 border rounded-lg">
+        <h2 class="text-xl font-semibold text-gray-700 mb-3 flex items-center">
+          <i class="ri-information-line mr-2"></i>How to Use QuickShare
+        </h2>
+        <ol class="list-decimal list-inside text-gray-600 space-y-2">
+          <li>
+            <span class="font-medium">Share Your ID:</span> Your unique Peer ID is displayed at the top. Copy it using the copy button.
+          </li>
+          <li>
+            <span class="font-medium">Connect to a Peer:</span> Ask your friend to share their Peer ID, then enter it in the "Enter Peer ID" field and click "Connect."
+          </li>
+          <li>
+            <span class="font-medium">Send a File:</span> Drag and drop your file or click "Browse" to select a file. Then click "Send File" after connecting.
+          </li>
+          <li>
+            <span class="font-medium">Receive a File:</span> When a file is sent, a download link will appear on your screen. Click it to download the file.
+          </li>
+        </ol>
+      </div>
+      <!-- Status Messages -->
+      <div id="statusMessages" class="mt-4 text-center"></div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Toast Notification Function
+    function showToast(message, bgColor = '#38a169') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.backgroundColor = bgColor;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Create a new Peer instance using the default PeerJS cloud server
+    const peer = new Peer();
+
+    // DOM Element References
+    const myPeerId = document.getElementById('myPeerId');
+    const connectionStatus = document.getElementById('connectionStatus');
+    const copyIdBtn = document.getElementById('copyIdBtn');
+    const receiverIdInput = document.getElementById('receiverId');
+    const connectPeerBtn = document.getElementById('connectPeer');
+    const fileInput = document.getElementById('fileInput');
+    const selectedFileInfo = document.getElementById('selectedFileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const sendFileBtn = document.getElementById('sendFile');
+    const statusMessages = document.getElementById('statusMessages');
+    const downloadArea = document.getElementById('downloadArea');
+    const downloadLink = document.getElementById('downloadLink');
+
+    // When the peer connection opens, display the generated Peer ID
+    peer.on('open', (id) => {
+      myPeerId.textContent = id;
+      connectionStatus.innerHTML = `<i class="ri-signal-wifi-line text-green-500 mr-1"></i><span>Online</span>`;
+
+      // Copy ID to Clipboard functionality with Toast
+      copyIdBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(id).then(() => {
+          showToast('Peer ID copied to clipboard!');
+        }).catch(err => {
+          console.error('Failed to copy ID:', err);
+          showToast('Failed to copy ID', '#e53e3e');
+        });
+      });
+    });
+
+    // Error Handling
+    peer.on('error', (err) => {
+      console.error('Peer Error:', err);
+      connectionStatus.innerHTML = `<i class="ri-wifi-off-line text-red-500 mr-1"></i><span>Connection Error: ${err.type}</span>`;
+    });
+
+    // Peer Connection Handler for "Connect" button
+    connectPeerBtn.addEventListener('click', () => {
+      const targetPeerId = receiverIdInput.value.trim();
+      if (!targetPeerId) {
+        showToast('Please enter a Peer ID', '#e53e3e');
+        return;
+      }
+      
+      try {
+        const conn = peer.connect(targetPeerId);
+        conn.on('open', () => {
+          statusMessages.innerHTML = `
+            <div class="text-green-600 flex items-center justify-center space-x-2">
+              <i class="ri-check-line"></i>
+              <span>Connected to ${targetPeerId}</span>
+            </div>
+          `;
+        });
+        conn.on('error', (err) => {
+          console.error('Connection Error:', err);
+          statusMessages.innerHTML = `
+            <div class="text-red-600 flex items-center justify-center space-x-2">
+              <i class="ri-error-warning-line"></i>
+              <span>Connection Failed</span>
+            </div>
+          `;
+        });
+      } catch (error) {
+        console.error('Connection Attempt Failed:', error);
+        statusMessages.innerHTML = `
+          <div class="text-red-600 flex items-center justify-center space-x-2">
+            <i class="ri-error-warning-line"></i>
+            <span>Connection Error</span>
+          </div>
+        `;
+      }
+    });
+
+    // File Input Handling
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        fileName.textContent = file.name;
+        fileSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
+        selectedFileInfo.classList.remove('hidden');
+        sendFileBtn.classList.remove('hidden');
+      }
+    });
+
+    // File Sending Logic
+    sendFileBtn.addEventListener('click', () => {
+      const file = fileInput.files[0];
+      const targetPeerId = receiverIdInput.value.trim();
+      if (!file || !targetPeerId) {
+        showToast('Please select a file and enter receiver ID', '#e53e3e');
+        return;
+      }
+
+      const conn = peer.connect(targetPeerId);
+      conn.on('open', () => {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const filePackage = {
+            fileName: file.name,
+            fileType: file.type,
+            fileBuffer: reader.result
+          };
+          conn.send(filePackage);
+          statusMessages.innerHTML = `
+            <div class="text-blue-600 flex items-center justify-center space-x-2">
+              <i class="ri-send-plane-line"></i>
+              <span>File sent successfully!</span>
+            </div>
+          `;
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    });
+
+    // Receiver File Handling
+    peer.on('connection', conn => {
+      conn.on('data', data => {
+        if (data && data.fileBuffer && data.fileType && data.fileName) {
+          const blob = new Blob([data.fileBuffer], { type: data.fileType });
+          const url = URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.download = data.fileName;
+          downloadArea.classList.remove('hidden');
+          statusMessages.innerHTML = `
+            <div class="text-green-600 flex items-center justify-center space-x-2">
+              <i class="ri-download-cloud-2-line"></i>
+              <span>File received!</span>
+            </div>
+          `;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
