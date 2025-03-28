@@ -5,51 +5,153 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MSShare - Peer File Transfer</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <link rel="shortcut icon" href="shared-folder.png" type="image/png">
   <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet" />
   <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
   <style>
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
+    /* Global Styles */
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      background: linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
-    .connection-status-online {
-      animation: pulse 2s infinite;
-    }
-    .file-drop-zone {
+
+    /* Container Styles */
+    .app-container {
+      max-width: 42rem;
+      width: 100%;
+      background: white;
+      border-radius: 1rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
       transition: all 0.3s ease;
     }
-    .file-drop-zone:hover {
-      background-color: rgba(52, 152, 219, 0.1);
-      border-color: #3498db;
+
+    .app-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
     }
-    /* Toast notification styling */
+
+    /* Header Styles */
+    .app-header {
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      color: white;
+      padding: 1.5rem;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Connection Section Styles */
+    .connection-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background-color: #f9fafb;
+      border-radius: 0.75rem;
+    }
+
+    .peer-avatar {
+      background-color: #dbeafe;
+      border-radius: 9999px;
+      padding: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* File Transfer Zone Styles */
+    .file-transfer-zone {
+      border: 2px dashed #93c5fd;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .file-transfer-zone:hover {
+      background-color: rgba(147, 197, 253, 0.1);
+      border-color: #3b82f6;
+    }
+
+    /* Toast Notification */
     .toast {
       position: fixed;
       top: 1rem;
       right: 1rem;
       z-index: 1000;
-      min-width: 250px;
       padding: 1rem;
-      background-color: #38a169;
+      background-color: #48bb78;
       color: white;
       border-radius: 0.5rem;
-      opacity: 0;
-      transform: translateY(-20px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
     }
+
     .toast.show {
-      opacity: 1;
-      transform: translateY(0);
+      transform: translateX(0);
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 640px) {
+      .app-container {
+        margin: 1rem;
+        width: calc(100% - 2rem);
+      }
+
+      .connection-section {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .file-transfer-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Animations */
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .pulse-animation {
+      animation: pulse 2s infinite;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+<body>
   <!-- Toast Notification -->
   <div id="toast" class="toast"></div>
 
-  <div class="w-full max-w-2xl bg-white shadow-2xl rounded-2xl overflow-hidden">
-    <div class="p-6 bg-gradient-to-r from-blue-500 to-purple-600">
+  <div class="app-container">
+    <div class="app-header">
       <h1 class="text-3xl sm:text-4xl font-bold text-white text-center flex items-center justify-center">
         <i class="ri-share-line mr-3"></i>MS File Share
       </h1>
@@ -90,8 +192,8 @@
       <!-- File Transfer Section -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Send File -->
-        <div class="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 file-drop-zone">
-          <input type="file" id="fileInput" class="hidden" />
+        <div class="bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 file-transfer-zone">
+          <input type="file" id="fileInput" class="hidden" multiple />
           <label for="fileInput" class="cursor-pointer flex flex-col items-center justify-center">
             <i class="ri-upload-cloud-2-line text-4xl text-blue-500 mb-2"></i>
             <p class="text-gray-600 text-center">
@@ -150,6 +252,12 @@
   </div>
 
   <script>
+    // Enhanced Error Handling and Logging
+    function logError(message, error) {
+      console.error(message, error);
+      showToast(message, '#e53e3e');
+    }
+
     // Initialize Toast Notification Function
     function showToast(message, bgColor = '#38a169') {
       const toast = document.getElementById('toast');
@@ -161,8 +269,33 @@
       }, 3000);
     }
 
-    // Create a new Peer instance using the default PeerJS cloud server
-    const peer = new Peer();
+    // Robust Network Configuration
+    const peerConfig = {
+      config: {
+        iceServers: [
+          // Google's public STUN server
+          { urls: 'stun:stun.l.google.com:19302' },
+          // Public TURN servers for better NAT traversal
+          { 
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          { 
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          // Additional STUN servers for redundancy
+          { urls: 'stun:stun.stunprotocol.org' },
+          { urls: 'stun:stun.sipnet.com' }
+        ]
+      },
+      debug: 2  // Increased debug level for comprehensive logging
+    };
+
+    // Create Peer with Enhanced Configuration
+    const peer = new Peer(peerConfig);
 
     // DOM Element References
     const myPeerId = document.getElementById('myPeerId');
@@ -179,48 +312,70 @@
     const downloadArea = document.getElementById('downloadArea');
     const downloadLink = document.getElementById('downloadLink');
 
-    // When the peer connection opens, display the generated Peer ID
+    // Global Variables for Connection Management
+    let currentConnection = null;
+    const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB file size limit
+    const SUPPORTED_FILE_TYPES = ['*/*']; // Allow all file types
+
+    // Peer Connection Open Event
     peer.on('open', (id) => {
       myPeerId.textContent = id;
-      connectionStatus.innerHTML = `<i class="ri-signal-wifi-line text-green-500 mr-1"></i><span>Online</span>`;
+      connectionStatus.innerHTML = `
+        <i class="ri-signal-wifi-line text-green-500 mr-1"></i>
+        <span>Online (ID: ${id})</span>
+      `;
 
-      // Copy ID to Clipboard functionality with Toast
+      // Copy ID to Clipboard
       copyIdBtn.addEventListener('click', () => {
         navigator.clipboard.writeText(id).then(() => {
           showToast('Peer ID copied to clipboard!');
         }).catch(err => {
-          console.error('Failed to copy ID:', err);
-          showToast('Failed to copy ID', '#e53e3e');
+          logError('Failed to copy ID', err);
         });
       });
     });
 
-    // Error Handling
+    // Comprehensive Error Handling
     peer.on('error', (err) => {
-      console.error('Peer Error:', err);
-      connectionStatus.innerHTML = `<i class="ri-wifi-off-line text-red-500 mr-1"></i><span>Connection Error: ${err.type}</span>`;
+      logError(`Peer Connection Error: ${err.type}`, err);
+      connectionStatus.innerHTML = `
+        <i class="ri-wifi-off-line text-red-500 mr-1"></i>
+        <span>Connection Error: ${err.type}</span>
+      `;
     });
 
-    // Peer Connection Handler for "Connect" button
+    // Connect to Peer with Enhanced Error Handling
     connectPeerBtn.addEventListener('click', () => {
       const targetPeerId = receiverIdInput.value.trim();
       if (!targetPeerId) {
-        showToast('Please enter a Peer ID', '#e53e3e');
+        showToast('Please enter a valid Peer ID', '#e53e3e');
         return;
       }
-      
+
       try {
-        const conn = peer.connect(targetPeerId);
-        conn.on('open', () => {
+        // Close any existing connection
+        if (currentConnection) {
+          currentConnection.close();
+        }
+
+        // Establish new connection
+        currentConnection = peer.connect(targetPeerId, { 
+          reliable: true,  // Ensure reliable data transfer
+          serialization: 'json'  // Use JSON serialization
+        });
+
+        currentConnection.on('open', () => {
           statusMessages.innerHTML = `
             <div class="text-green-600 flex items-center justify-center space-x-2">
               <i class="ri-check-line"></i>
               <span>Connected to ${targetPeerId}</span>
             </div>
           `;
+          showToast(`Connected to ${targetPeerId}`);
         });
-        conn.on('error', (err) => {
-          console.error('Connection Error:', err);
+
+        currentConnection.on('error', (err) => {
+          logError(`Connection to ${targetPeerId} failed`, err);
           statusMessages.innerHTML = `
             <div class="text-red-600 flex items-center justify-center space-x-2">
               <i class="ri-error-warning-line"></i>
@@ -228,74 +383,123 @@
             </div>
           `;
         });
+
+        currentConnection.on('close', () => {
+          showToast('Connection closed', '#f56565');
+          currentConnection = null;
+        });
       } catch (error) {
-        console.error('Connection Attempt Failed:', error);
-        statusMessages.innerHTML = `
-          <div class="text-red-600 flex items-center justify-center space-x-2">
-            <i class="ri-error-warning-line"></i>
-            <span>Connection Error</span>
-          </div>
-        `;
+        logError('Connection Attempt Failed', error);
       }
     });
 
-    // File Input Handling
+    // File Input Handling with Validation
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (file) {
-        fileName.textContent = file.name;
-        fileSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
-        selectedFileInfo.classList.remove('hidden');
-        sendFileBtn.classList.remove('hidden');
-      }
-    });
+      if (!file) return;
 
-    // File Sending Logic
-    sendFileBtn.addEventListener('click', () => {
-      const file = fileInput.files[0];
-      const targetPeerId = receiverIdInput.value.trim();
-      if (!file || !targetPeerId) {
-        showToast('Please select a file and enter receiver ID', '#e53e3e');
+      // File Size Validation
+      if (file.size > MAX_FILE_SIZE) {
+        showToast(`File too large. Max size is ${MAX_FILE_SIZE / (1024 * 1024)} MB`, '#e53e3e');
+        fileInput.value = ''; // Clear file input
         return;
       }
 
-      const conn = peer.connect(targetPeerId);
-      conn.on('open', () => {
-        const reader = new FileReader();
-        reader.onload = function() {
+      // File Type Validation
+      if (!SUPPORTED_FILE_TYPES.includes('*/*') && 
+          !SUPPORTED_FILE_TYPES.includes(file.type)) {
+        showToast('Unsupported file type', '#e53e3e');
+        fileInput.value = ''; // Clear file input
+        return;
+      }
+
+      // Display File Info
+      fileName.textContent = file.name;
+      fileSize.textContent = `${(file.size / 1024).toFixed(2)} KB`;
+      selectedFileInfo.classList.remove('hidden');
+      sendFileBtn.classList.remove('hidden');
+    });
+
+    // File Sending Logic with Robust Error Handling
+    sendFileBtn.addEventListener('click', () => {
+      const file = fileInput.files[0];
+      const targetPeerId = receiverIdInput.value.trim();
+
+      // Validation Checks
+      if (!file) {
+        showToast('Please select a file', '#e53e3e');
+        return;
+      }
+
+      if (!targetPeerId) {
+        showToast('Please enter receiver ID', '#e53e3e');
+        return;
+      }
+
+      if (!currentConnection) {
+        showToast('Please establish a connection first', '#e53e3e');
+        return;
+      }
+
+      // File Reading and Sending
+      const reader = new FileReader();
+      reader.onload = function() {
+        try {
           const filePackage = {
             fileName: file.name,
             fileType: file.type,
-            fileBuffer: reader.result
+            fileBuffer: reader.result,
+            fileSize: file.size
           };
-          conn.send(filePackage);
+
+          currentConnection.send(filePackage);
+          
           statusMessages.innerHTML = `
             <div class="text-blue-600 flex items-center justify-center space-x-2">
               <i class="ri-send-plane-line"></i>
               <span>File sent successfully!</span>
             </div>
           `;
-        };
-        reader.readAsArrayBuffer(file);
-      });
+          showToast(`Sent ${file.name}`);
+        } catch (error) {
+          logError('File sending failed', error);
+        }
+      };
+
+      reader.onerror = function(error) {
+        logError('File reading error', error);
+      };
+
+      reader.readAsArrayBuffer(file);
     });
 
-    // Receiver File Handling
+    // Receiver File Handling with Enhanced Error Management
     peer.on('connection', conn => {
       conn.on('data', data => {
-        if (data && data.fileBuffer && data.fileType && data.fileName) {
-          const blob = new Blob([data.fileBuffer], { type: data.fileType });
-          const url = URL.createObjectURL(blob);
-          downloadLink.href = url;
-          downloadLink.download = data.fileName;
-          downloadArea.classList.remove('hidden');
-          statusMessages.innerHTML = `
-            <div class="text-green-600 flex items-center justify-center space-x-2">
-              <i class="ri-download-cloud-2-line"></i>
-              <span>File received!</span>
-            </div>
-          `;
+        try {
+          if (data && data.fileBuffer && data.fileType && data.fileName) {
+            const blob = new Blob([data.fileBuffer], { type: data.fileType });
+            const url = URL.createObjectURL(blob);
+            
+            downloadLink.href = url;
+            downloadLink.download = data.fileName;
+            downloadArea.classList.remove('hidden');
+            
+            statusMessages.innerHTML = `
+              <div class="text-green-600 flex items-center justify-center space-x-2">
+                <i class="ri-download-cloud-2-line"></i>
+                <span>File received: ${data.fileName}</span>
+              </div>
+            `;
+            showToast(`Received ${data.fileName}`);
+          }
+        } catch (error) {
+          logError('File receiving error', error);
         }
+      });
+
+      conn.on('error', (err) => {
+        logError('Connection error during file transfer', err);
       });
     });
   </script>
