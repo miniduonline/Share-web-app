@@ -1,654 +1,387 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FileBeam - Seamless File Transfers</title>
-  <!-- Tailwind CSS -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-  <!-- QRCode.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <!-- FileSaver.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <style>
-    .drop-zone {
-      transition: all 0.3s ease;
-    }
-    .drop-zone.active {
-      background-color: rgba(99, 102, 241, 0.1);
-      border-color: rgb(99, 102, 241);
-    }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    .pulse-animation {
-      animation: pulse 1.5s infinite;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"],
+        input[type="tel"],
+        input[type="email"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .otp-inputs {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .otp-inputs input {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .message {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+        }
+        
+        .timer {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+    </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 text-gray-800 dark:text-gray-200">
-  <!-- HEADER -->
-  <header class="py-6 px-4 sm:px-6 md:px-8 lg:px-16 flex items-center justify-between">
-    <div class="flex items-center">
-      <svg class="w-10 h-10 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M5.5 13a3.5 3.5 0 01-3.5-3.5V5a3.5 3.5 0 117 0v5a3.5 3.5 0 01-3.5 3.5zm0-1a2.5 2.5 0 002.5-2.5V5a2.5 2.5 0 10-5 0v4.5A2.5 2.5 0 005.5 12zm9.5-1a3.5 3.5 0 01-3.5-3.5V3a3.5 3.5 0 117 0v4.5a3.5 3.5 0 01-3.5 3.5zm0-1a2.5 2.5 0 002.5-2.5V3a2.5 2.5 0 10-5 0v4.5A2.5 2.5 0 0015 10z"></path>
-        <path d="M5.5 13a3.5 3.5 0 01-3.5-3.5V5a3.5 3.5 0 117 0v5a3.5 3.5 0 01-3.5 3.5zm0-1a2.5 2.5 0 002.5-2.5V5a2.5 2.5 0 10-5 0v4.5A2.5 2.5 0 005.5 12zm9.5-1a3.5 3.5 0 01-3.5-3.5V3a3.5 3.5 0 117 0v4.5a3.5 3.5 0 01-3.5 3.5zm0-1a2.5 2.5 0 002.5-2.5V3a2.5 2.5 0 10-5 0v4.5A2.5 2.5 0 0015 10z"></path>
-      </svg>
-      <h1 class="ml-2 text-2xl font-bold">FileBeam</h1>
-    </div>
-    <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path id="theme-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z">
-        </path>
-      </svg>
-    </button>
-  </header>
-
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 md:px-8 py-8">
-    <!-- HERO -->
-    <div class="mb-8 text-center">
-      <h2 class="text-3xl sm:text-4xl font-bold mb-4">Seamless File Sharing</h2>
-      <p class="text-lg text-gray-600 dark:text-gray-400">Transfer files between your devices instantly – no account needed</p>
-    </div>
-
-    <div class="flex flex-col md:flex-row gap-8">
-      <!-- SEND -->
-      <div class="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-semibold mb-4 flex items-center">
-          <svg class="w-5 h-5 mr-2 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"></path>
-          </svg>
-          Send Files
-        </h3>
-
-        <div id="drop-zone"
-             class="drop-zone border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
-          <div class="space-y-4">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-            </svg>
-            <p class="text-lg font-medium">Drag files here or</p>
-            <button id="file-select"
-                    class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              Browse Files
-            </button>
-            <input type="file" id="file-input" class="hidden" multiple>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Maximum file size: 2GB</p>
-          </div>
+<body>
+    <div class="container">
+        <h1>OTP Verification</h1>
+        
+        <!-- Step 1: Registration Form -->
+        <div id="registrationForm">
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input type="tel" id="phoneNumber" placeholder="9471XXXXXXX" required>
+                <small>Format: 9471XXXXXXX (without leading 0 or +94)</small>
+            </div>
+            <div class="form-group">
+                <label for="firstName">First Name:</label>
+                <input type="text" id="firstName" placeholder="Enter your first name">
+            </div>
+            <div class="form-group">
+                <label for="lastName">Last Name:</label>
+                <input type="text" id="lastName" placeholder="Enter your last name">
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="address">Address:</label>
+                <input type="text" id="address" placeholder="Enter your address">
+            </div>
+            <button id="sendOtpBtn">Send OTP</button>
         </div>
-
-        <div id="selected-files" class="mt-6 space-y-3 hidden">
-          <h4 class="font-medium">Selected Files</h4>
-          <div id="file-list" class="space-y-2"></div>
-          <div class="flex justify-end mt-4">
-            <button id="send-button"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              Send Files
-            </button>
-          </div>
+        
+        <!-- Step 2: OTP Verification -->
+        <div id="otpVerificationForm" class="hidden">
+            <p>We've sent an OTP to your phone number. Please enter the code below:</p>
+            <div class="otp-inputs">
+                <input type="text" maxlength="1" class="otp-input" autofocus>
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+                <input type="text" maxlength="1" class="otp-input">
+            </div>
+            <div class="timer" id="timer">Time remaining: 02:00</div>
+            <button id="verifyOtpBtn">Verify OTP</button>
+            <button id="resendOtpBtn" class="hidden">Resend OTP</button>
         </div>
-
-        <div id="qr-section" class="mt-6 hidden">
-          <h4 class="font-medium mb-3">Scan to Receive Files</h4>
-          <div class="flex flex-col items-center space-y-4">
-            <div id="qrcode" class="bg-white p-2 rounded"></div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Or share this link:</p>
-            <div class="flex w-full">
-              <input id="share-link" type="text"
-                     class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md bg-gray-50 dark:bg-gray-700"
-                     readonly>
-              <button id="copy-link"
-                      class="px-3 py-2 bg-gray-200 dark:bg-gray-600 rounded-r-md hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
-                  <path
-                    d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
-                </svg>
-              </button>
+        
+        <!-- Step 3: Success Message -->
+        <div id="successMessage" class="hidden">
+            <div class="message success">
+                <h2>Registration Successful!</h2>
+                <p>Thank you for registering with us. Your account has been verified successfully.</p>
             </div>
-          </div>
+            <button id="newRegistrationBtn">Register Another</button>
         </div>
-      </div>
-
-      <!-- RECEIVE -->
-      <div class="flex-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-        <h3 class="text-xl font-semibold mb-4 flex items-center">
-          <svg class="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd"
-                  d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                  clip-rule="evenodd"></path>
-          </svg>
-          Receive Files
-        </h3>
-
-        <div id="receive-options" class="mt-4 space-y-6">
-          <div
-            class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-center">
-            <div class="mb-4 p-3 bg-green-100 dark:bg-green-900 rounded-full">
-              <svg class="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor"
-                   viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <h4 class="text-lg font-medium mb-2">Scan QR from sender</h4>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Use your camera to scan the QR code shown on the sender's device</p>
-            <button id="scan-qr"
-                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-              Open Camera
-            </button>
-          </div>
-
-          <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t border-gray-300 dark:border-gray-600"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-              <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">or</span>
-            </div>
-          </div>
-
-          <div class="flex flex-col space-y-3">
-            <h4 class="font-medium">Enter receive code</h4>
-            <div class="flex">
-              <input type="text" id="receive-code" placeholder="Enter 6-digit code"
-                     class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-md bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <button id="connect-code"
-                      class="px-4 py-2 bg-indigo-600 text-white rounded-r-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                Connect
-              </button>
-            </div>
-          </div>
+        
+        <!-- Loading and Error Messages -->
+        <div id="loadingMessage" class="hidden loading">
+            <p>Please wait...</p>
         </div>
-
-        <div id="incoming-files" class="mt-6 hidden">
-          <h4 class="font-medium mb-3">Incoming Files</h4>
-          <div id="incoming-file-list" class="space-y-3"></div>
-          <div class="mt-4 text-center">
-            <button id="download-all"
-                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500">
-              Download All
-            </button>
-          </div>
+        
+        <div id="errorMessage" class="hidden message error">
+            <p id="errorText"></p>
+            <button id="tryAgainBtn">Try Again</button>
         </div>
-      </div>
     </div>
 
-    <!-- HISTORY -->
-    <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
-      <h3 class="text-xl font-semibold mb-4 flex items-center">
-        <svg class="w-5 h-5 mr-2 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                clip-rule="evenodd"></path>
-        </svg>
-        Recent Transfers
-      </h3>
-      <div id="history-empty" class="text-center py-8 text-gray-500 dark:text-gray-400">
-        <p>No recent transfers</p>
-      </div>
-      <div id="history-list" class="hidden overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead>
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">File</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Size</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Action</th>
-            </tr>
-          </thead>
-          <tbody id="history-table-body" class="divide-y divide-gray-200 dark:divide-gray-700"></tbody>
-        </table>
-      </div>
-    </div>
-  </main>
-
-  <!-- PREVIEW MODAL -->
-  <div id="preview-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden">
-      <div class="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-        <h3 id="preview-title" class="text-lg font-medium">File Preview</h3>
-        <button id="close-preview" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      </div>
-      <div id="preview-content" class="p-4 overflow-auto max-h-[calc(90vh-4rem)]"></div>
-    </div>
-  </div>
-
-  <!-- TOAST -->
-  <div id="toast" class="fixed bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 hidden transform transition-all duration-300 translate-y-full">
-    <div class="flex items-center">
-      <svg id="toast-icon" class="w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 20 20"></svg>
-      <p id="toast-message"></p>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="mt-12 py-6 text-center text-gray-600 dark:text-gray-400">
-    <p>© 2025 FileBeam. All rights reserved.</p>
-  </footer>
-
-  <script>
-    // --- THEME TOGGLE ---
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = document.getElementById('theme-icon');
-    const htmlEl = document.documentElement;
-    function updateThemeIcon(isDark) {
-      if (isDark) {
-        themeIcon.setAttribute('d', 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z');
-      } else {
-        themeIcon.setAttribute('d', 'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z');
-      }
-    }
-    if (localStorage.theme === 'dark' ||
-        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      htmlEl.classList.add('dark');
-      updateThemeIcon(true);
-    } else {
-      htmlEl.classList.remove('dark');
-      updateThemeIcon(false);
-    }
-    themeToggle.addEventListener('click', () => {
-      const isDark = htmlEl.classList.toggle('dark');
-      localStorage.theme = isDark ? 'dark' : 'light';
-      updateThemeIcon(isDark);
-    });
-
-    // --- FILE UPLOAD & QR CODE ---
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const fileSelect = document.getElementById('file-select');
-    const selectedFiles = document.getElementById('selected-files');
-    const fileList = document.getElementById('file-list');
-    const sendButton = document.getElementById('send-button');
-    const qrSection = document.getElementById('qr-section');
-    const shareLink = document.getElementById('share-link');
-    const copyLink = document.getElementById('copy-link');
-    let files = [];
-
-    fileSelect.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-    ['dragenter','dragover','dragleave','drop'].forEach(evt => {
-      dropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }, false);
-    });
-    ['dragenter','dragover'].forEach(evt => dropZone.addEventListener(evt, () => dropZone.classList.add('active'), false));
-    ['dragleave','drop'].forEach(evt => dropZone.addEventListener(evt, () => dropZone.classList.remove('active'), false));
-    dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
-
-    function handleFiles(list) {
-      files = [...files, ...Array.from(list)];
-      updateFileList();
-      selectedFiles.classList.remove('hidden');
-    }
-
-    function updateFileList() {
-      fileList.innerHTML = '';
-      files.forEach((file, i) => {
-        const ext = file.name.split('.').pop().toLowerCase();
-        const icon = getFileIcon(ext);
-        const item = document.createElement('div');
-        item.className = 'flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg';
-        item.innerHTML = `
-          <div class="flex items-center">
-            <div class="mr-3">${icon}</div>
-            <div>
-              <p class="font-medium">${file.name}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">${formatFileSize(file.size)}</p>
-            </div>
-          </div>
-          <div class="flex items-center">
-            <button class="preview-btn text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 mr-2" data-i="${i}">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-              </svg>
-            </button>
-            <button class="remove-btn text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" data-i="${i}">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-              </svg>
-            </button>
-          </div>`;
-        fileList.appendChild(item);
-      });
-
-      document.querySelectorAll('.preview-btn').forEach(btn =>
-        btn.addEventListener('click', e => previewFile(files[+e.currentTarget.dataset.i]))
-      );
-      document.querySelectorAll('.remove-btn').forEach(btn =>
-        btn.addEventListener('click', e => {
-          files.splice(+e.currentTarget.dataset.i, 1);
-          updateFileList();
-          if (!files.length) selectedFiles.classList.add('hidden');
-        })
-      );
-    }
-
-    function getFileIcon(ext) {
-      const c = 'w-8 h-8';
-      switch (ext) {
-        case 'pdf':
-          return `<svg class="${c} text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                          clip-rule="evenodd"></path>
-                  </svg>`;
-        case 'jpg': case 'jpeg': case 'png': case 'gif': case 'bmp': case 'svg':
-          return `<svg class="${c} text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                          clip-rule="evenodd"></path>
-                  </svg>`;
-        case 'doc': case 'docx':
-          return `<svg class="${c} text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                          clip-rule="evenodd"></path>
-                  </svg>`;
-        case 'xls': case 'xlsx':
-          return `<svg class="${c} text-green-700" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M5 4a3 3 0 00-3 3v6a3 3 0 003 3h10a3 3 0 003-3V7a3 3 0 00-3-3H5zm-1 9v-1h5v2H5a1 1 0 01-1-1zm7 1h4a1 1 0 001-1v-1h-5v2zm0-4h5V8h-5v2zM9 8H4v2h5V8z"
-                          clip-rule="evenodd"></path>
-                  </svg>`;
-        case 'zip': case 'rar': case '7z':
-          return `<svg class="${c} text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                          clip-rule="evenodd"></path>
-                  </svg>`;
-        default:
-          return `<svg class="${c} text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                          d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 2v8h8V6H6z"
-                          clip-rule="evenodd"></path>
-                  </svg>`;
-      }
-    }
-
-    function formatFileSize(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024, sizes = ['Bytes','KB','MB','GB','TB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    // --- PREVIEW ---
-    const previewModal = document.getElementById('preview-modal');
-    const previewTitle = document.getElementById('preview-title');
-    const previewContent = document.getElementById('preview-content');
-    const closePreview = document.getElementById('close-preview');
-
-    function previewFile(file) {
-      previewTitle.textContent = file.name;
-      previewContent.innerHTML = '';
-      const type = file.type.split('/')[0];
-      const ext = file.name.split('.').pop().toLowerCase();
-
-      if (type === 'image') {
-        const img = document.createElement('img');
-        img.className = 'max-w-full max-h-[70vh] mx-auto';
-        img.src = URL.createObjectURL(file);
-        previewContent.appendChild(img);
-      } else if (type === 'video') {
-        const video = document.createElement('video');
-        video.className = 'max-w-full max-h-[70vh] mx-auto';
-        video.controls = true;
-        video.src = URL.createObjectURL(file);
-        previewContent.appendChild(video);
-      } else if (type === 'audio') {
-        const audio = document.createElement('audio');
-        audio.className = 'w-full';
-        audio.controls = true;
-        audio.src = URL.createObjectURL(file);
-        previewContent.appendChild(audio);
-      } else if (ext === 'pdf') {
-        const embed = document.createElement('embed');
-        embed.className = 'w-full h-[70vh]';
-        embed.src = URL.createObjectURL(file);
-        embed.type = 'application/pdf';
-        previewContent.appendChild(embed);
-      } else if (['txt','csv','json'].includes(ext)) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const pre = document.createElement('pre');
-          pre.className = 'whitespace-pre-wrap p-2 bg-gray-100 dark:bg-gray-900 rounded';
-          pre.textContent = e.target.result;
-          previewContent.appendChild(pre);
-        };
-        reader.readAsText(file);
-      } else {
-        previewContent.innerHTML = `
-          <div class="text-center p-8">
-            <svg class="w-16 h-16 mx-auto text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
-                    d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 2v8h8V6H6z"
-                    clip-rule="evenodd"></path>
-            </svg>
-            <p class="mt-4 text-lg font-medium">Preview not available</p>
-            <p class="mt-2 text-gray-500 dark:text-gray-400">This file type cannot be previewed</p>
-          </div>`;
-      }
-
-      previewModal.classList.remove('hidden');
-    }
-
-    closePreview.addEventListener('click', () => previewModal.classList.add('hidden'));
-    previewModal.addEventListener('click', e => {
-      if (e.target === previewModal) previewModal.classList.add('hidden');
-    });
-
-    // --- SEND FILES & QR ---
-    sendButton.addEventListener('click', () => {
-      if (!files.length) {
-        showToast('Please select files to send', 'error');
-        return;
-      }
-      const sessionId = Math.random().toString(36).substring(2, 8);
-      const shareUrl = `${window.location.origin}/receive/${sessionId}`;
-
-      qrSection.classList.remove('hidden');
-      const qrContainer = document.getElementById('qrcode');
-      qrContainer.innerHTML = '';
-      new QRCode(qrContainer, {
-        text: shareUrl,
-        width: 180,
-        height: 180,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-
-      shareLink.value = shareUrl;
-      addToHistory(files, 'sent');
-      showToast('Files ready to be shared', 'success');
-    });
-
-    copyLink.addEventListener('click', () => {
-      shareLink.select();
-      document.execCommand('copy');
-      showToast('Link copied to clipboard', 'success');
-    });
-
-    // --- RECEIVE FILES ---
-    const scanQrBtn = document.getElementById('scan-qr');
-    const receiveCode = document.getElementById('receive-code');
-    const connectCodeBtn = document.getElementById('connect-code');
-    const receiveOptions = document.getElementById('receive-options');
-    const incomingFiles = document.getElementById('incoming-files');
-    const incomingFileList = document.getElementById('incoming-file-list');
-    const downloadAll = document.getElementById('download-all');
-
-    // Mock files for demo
-    const mockReceivedFiles = [
-      { name: 'document.pdf', size: 2500000, type: 'application/pdf' },
-      { name: 'image.jpg', size: 1200000, type: 'image/jpeg' },
-      { name: 'spreadsheet.xlsx', size: 1800000, type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-    ];
-
-    scanQrBtn.addEventListener('click', () => {
-      alert('Camera access would be requested here to scan QR code');
-      setTimeout(() => receiveFiles(mockReceivedFiles), 1000);
-    });
-
-    connectCodeBtn.addEventListener('click', () => {
-      const code = receiveCode.value.trim();
-      if (code.length !== 6) {
-        showToast('Please enter a valid 6-digit code', 'error');
-        return;
-      }
-      showToast('Connecting...', 'info');
-      setTimeout(() => receiveFiles(mockReceivedFiles), 1500);
-    });
-
-    function receiveFiles(received) {
-      receiveOptions.classList.add('hidden');
-      incomingFiles.classList.remove('hidden');
-      incomingFileList.innerHTML = '';
-
-      received.forEach((file, i) => {
-        const ext = file.name.split('.').pop().toLowerCase();
-        const icon = getFileIcon(ext);
-        const div = document.createElement('div');
-        div.className = 'flex items-center justify-between bg-gray-50 dark:bg-gray-700 p-3 rounded-lg';
-        div.innerHTML = `
-          <div class="flex items-center">
-            <div class="mr-3">${icon}</div>
-            <div>
-              <p class="font-medium">${file.name}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">${formatFileSize(file.size)}</p>
-            </div>
-          </div>
-          <button class="download-btn px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" data-i="${i}">Download</button>
-        `;
-        incomingFileList.appendChild(div);
-      });
-
-      document.querySelectorAll('.download-btn').forEach(btn =>
-        btn.addEventListener('click', e => downloadFile(mockReceivedFiles[+e.currentTarget.dataset.i]))
-      );
-
-      addToHistory(received, 'received');
-      showToast('Files ready to download', 'success');
-    }
-
-    downloadAll.addEventListener('click', () => {
-      mockReceivedFiles.forEach(downloadFile);
-      showToast('All files downloaded', 'success');
-    });
-
-    function downloadFile(file) {
-      const blob = new Blob(['Dummy content for ' + file.name], { type: file.type });
-      saveAs(blob, file.name);
-      showToast(`Downloaded ${file.name}`, 'success');
-    }
-
-    // --- TRANSFER HISTORY ---
-    const historyEmpty = document.getElementById('history-empty');
-    const historyList = document.getElementById('history-list');
-    const historyTableBody = document.getElementById('history-table-body');
-
-    function addToHistory(arr, type) {
-      historyEmpty.classList.add('hidden');
-      historyList.classList.remove('hidden');
-
-      const now = new Date();
-      const date = now.toLocaleDateString();
-      const time = now.toLocaleTimeString();
-
-      arr.forEach(file => {
-        const ext = file.name.split('.').pop().toLowerCase();
-        const icon = getFileIcon(ext);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex items-center">
-              <div class="mr-3">${icon}</div>
-              <span class="font-medium">${file.name}</span>
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div>
-              <div class="text-sm">${date}</div>
-              <div class="text-xs text-gray-500 dark:text-gray-400">${time}</div>
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">${formatFileSize(file.size)}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${type === 'sent' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}">
-              ${type === 'sent' ? 'Sent' : 'Received'}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <button class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300 download-history" data-name="${file.name}">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-              </svg>
-            </button>
-          </td>`;
-        historyTableBody.prepend(tr);
-      });
-
-      document.querySelectorAll('.download-history').forEach(btn =>
-        btn.addEventListener('click', e => {
-          const name = e.currentTarget.dataset.name;
-          const blob = new Blob(['Dummy content for ' + name], { type: 'application/octet-stream' });
-          saveAs(blob, name);
-          showToast(`Downloaded ${name}`, 'success');
-        })
-      );
-    }
-
-    // --- TOAST NOTIFICATIONS ---
-    const toast = document.getElementById('toast');
-    const toastIcon = document.getElementById('toast-icon');
-    const toastMessage = document.getElementById('toast-message');
-
-    function showToast(msg, type = 'info') {
-      toastMessage.textContent = msg;
-      toastIcon.className = 'w-6 h-6 mr-2';
-
-      switch (type) {
-        case 'success':
-          toastIcon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>';
-          toastIcon.classList.add('text-green-600');
-          toastIcon.classList.remove('text-red-600','text-blue-600');
-          break;
-        case 'error':
-          toastIcon.innerHTML = '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>';
-          toastIcon.classList.add('text-red-600');
-          toastIcon.classList.remove('text-green-600','text-blue-600');
-          break;
-        default:
-          toastIcon.innerHTML = '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>';
-          toastIcon.classList.add('text-blue-600');
-          toastIcon.classList.remove('text-green-600','text-red-600');
-      }
-
-      toast.classList.remove('hidden','translate-y-full');
-      setTimeout(() => {
-        toast.classList.add('translate-y-full');
-        setTimeout(() => toast.classList.add('hidden'), 300);
-      }, 3000);
-    }
-
-    // --- INIT ---
-    window.addEventListener('DOMContentLoaded', () => {
-      console.log('FileBeam initialized');
-    });
-  </script>
+    <script>
+        // Constants
+        const API_USER_ID = '29318';
+        const API_KEY = 'g9s0WKlpTNpXUDXYwBgX';
+        const SENDER_ID = 'Messageium';
+        const API_URL = 'https://app.notify.lk/api/v1/send';
+        
+        // DOM Elements
+        const registrationForm = document.getElementById('registrationForm');
+        const otpVerificationForm = document.getElementById('otpVerificationForm');
+        const successMessage = document.getElementById('successMessage');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const sendOtpBtn = document.getElementById('sendOtpBtn');
+        const verifyOtpBtn = document.getElementById('verifyOtpBtn');
+        const resendOtpBtn = document.getElementById('resendOtpBtn');
+        const newRegistrationBtn = document.getElementById('newRegistrationBtn');
+        const tryAgainBtn = document.getElementById('tryAgainBtn');
+        const timerElement = document.getElementById('timer');
+        const otpInputs = document.querySelectorAll('.otp-input');
+        
+        // Variables
+        let generatedOtp = '';
+        let timerInterval;
+        let remainingTime = 120; // 2 minutes
+        
+        // Event Listeners
+        sendOtpBtn.addEventListener('click', sendOtp);
+        verifyOtpBtn.addEventListener('click', verifyOtp);
+        resendOtpBtn.addEventListener('click', sendOtp);
+        newRegistrationBtn.addEventListener('click', resetForm);
+        tryAgainBtn.addEventListener('click', resetForm);
+        
+        // OTP Input Handling
+        otpInputs.forEach((input, index) => {
+            input.addEventListener('input', function() {
+                if (this.value.length === 1) {
+                    if (index < otpInputs.length - 1) {
+                        otpInputs[index + 1].focus();
+                    }
+                }
+            });
+            
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Backspace' && !this.value && index > 0) {
+                    otpInputs[index - 1].focus();
+                }
+            });
+        });
+        
+        // Functions
+        function sendOtp() {
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const email = document.getElementById('email').value;
+            const address = document.getElementById('address').value;
+            
+            // Validate phone number
+            if (!phoneNumber || !/^94\d{9}$|^9\d{9}$/.test(phoneNumber)) {
+                showError('Please enter a valid phone number in the format 9471XXXXXXX');
+                return;
+            }
+            
+            // Generate a 6-digit OTP
+            generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // Show loading message
+            showLoading();
+            
+            // Prepare the message
+            const message = `Your OTP for verification is: ${generatedOtp}. This code will expire in 2 minutes.`;
+            
+            // In a real implementation, this would be a server-side API call
+            // For demo purposes, we're simulating the API call
+            simulateApiCall(phoneNumber, firstName, lastName, email, address, message)
+                .then(response => {
+                    // Hide loading and show OTP verification form
+                    hideLoading();
+                    registrationForm.classList.add('hidden');
+                    otpVerificationForm.classList.remove('hidden');
+                    
+                    // Focus on the first OTP input
+                    otpInputs[0].focus();
+                    
+                    // Reset OTP inputs
+                    otpInputs.forEach(input => {
+                        input.value = '';
+                    });
+                    
+                    // Start the timer
+                    startTimer();
+                })
+                .catch(error => {
+                    hideLoading();
+                    showError('Failed to send OTP. ' + error);
+                });
+        }
+        
+        function verifyOtp() {
+            // Get the entered OTP
+            let enteredOtp = '';
+            otpInputs.forEach(input => {
+                enteredOtp += input.value;
+            });
+            
+            // Check if OTP is valid
+            if (enteredOtp.length !== 6) {
+                showError('Please enter a valid 6-digit OTP');
+                return;
+            }
+            
+            // Check if OTP matches
+            if (enteredOtp === generatedOtp) {
+                // Clear timer
+                clearInterval(timerInterval);
+                
+                // Show success message
+                otpVerificationForm.classList.add('hidden');
+                successMessage.classList.remove('hidden');
+            } else {
+                showError('Invalid OTP. Please try again');
+            }
+        }
+        
+        function startTimer() {
+            // Reset timer
+            remainingTime = 120;
+            updateTimerDisplay();
+            
+            // Clear any existing interval
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // Start the timer
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+                
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval);
+                    resendOtpBtn.classList.remove('hidden');
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerElement.textContent = `Time remaining: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function simulateApiCall(phoneNumber, firstName, lastName, email, address, message) {
+            // In a real implementation, this would use fetch or XMLHttpRequest to call the API
+            // For demo purposes, we're simulating the API call with a promise
+            return new Promise((resolve, reject) => {
+                // Simulate network delay
+                setTimeout(() => {
+                    // 90% chance of success (for demo purposes)
+                    if (Math.random() < 0.9) {
+                        resolve({
+                            status: 'success',
+                            data: 'Sent'
+                        });
+                    } else {
+                        reject('API error: Failed to send SMS');
+                    }
+                }, 1500);
+            });
+        }
+        
+        function showLoading() {
+            loadingMessage.classList.remove('hidden');
+        }
+        
+        function hideLoading() {
+            loadingMessage.classList.add('hidden');
+        }
+        
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+        
+        function resetForm() {
+            // Clear all inputs
+            document.getElementById('phoneNumber').value = '';
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('email').value = '';
+            document.getElementById('address').value = '';
+            
+            // Reset OTP inputs
+            otpInputs.forEach(input => {
+                input.value = '';
+            });
+            
+            // Clear timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // Show registration form, hide others
+            registrationForm.classList.remove('hidden');
+            otpVerificationForm.classList.add('hidden');
+            successMessage.classList.add('hidden');
+            errorMessage.classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
